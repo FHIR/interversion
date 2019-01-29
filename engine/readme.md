@@ -29,7 +29,7 @@ Parameters:
 
 * _engine_: an object that makes conversion/transformation services available to the script - see below for documentation
 * _object_: the source object being converted - see below for documentation and specifications
-* _api_: provides direct access to the FHIR database, authorised as a appropriate. See below for documentation
+* _api_: provides direct access to the FHIR database, authorised as appropriate. See below for documentation
 * _return_: there is no return fucnction
 
 The convert function is responsible for the logic of breaking up the content of the incoming object, matching 
@@ -46,7 +46,7 @@ to FHIR resources can be done in several different ways:
 * Using a liquid template (or a set of them) - this is the easiest way to perform simple conversions, but is not useable for managing merging
 * Others to be defined...
 
-The source uses the services defined on the engine object to launch the non javascript kind of conversions.
+The javascript code uses the services defined on the engine object to launch the non javascript kind of conversions.
 
 ## Engine
 
