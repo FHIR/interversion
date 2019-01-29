@@ -60,7 +60,7 @@ Here's a simple javascript that illustrates how this might all come together:
 	  var patid = pid.field[3].element[1].text;
 	  // or it could be:  patid = pid.q('field[3].element.where(component[5] = "MR").text');
     
-	  var pat = api.read('Patient', patid); // assuming that we store patients with MYN as master
+	  var pat = api.read('Patient', patid, patid); // assuming that we store patients with MYN as master
 	  if (pat == null)
 		pat = makePatient(engine, pid, api);
 	  else
@@ -69,15 +69,17 @@ Here's a simple javascript that illustrates how this might all come together:
 	  // now: process the encounter
 	}
     
-	function makePatient(engine, pid, api) {
+	function makePatient(engine, pid, api, patid) {
 	  var pat = engine.liquid("pid.liquid", pid, "Patient", "json");
-	  return api.create(pat);
-	}
-
+      pat.id = patid;
+	  return api.update(pat);
+	} 
+    
 	function updatePatient(pat, pid, api) {
 	  // todo....
 	}
 
+For a fully worked example, see <https://github.com/FHIR/interversion/tree/master/engine/v2-scripts>
 
 ## Engine
 
