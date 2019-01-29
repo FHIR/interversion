@@ -60,7 +60,7 @@ Here's a simple javascript that illustrates how this might all come together:
 	  var patid = pid.field[3].element[1].text;
 	  // or it could be:  patid = pid.q('field[3].element.where(component[5] = "MR").text');
     
-	  var pat = api.read('Patient', pid); // assuming that we store patients with MYN as master
+	  var pat = api.read('Patient', patid); // assuming that we store patients with MYN as master
 	  if (pat == null)
 		pat = makePatient(engine, pid, api);
 	  else

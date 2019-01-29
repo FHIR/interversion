@@ -1,0 +1,23 @@
+{
+  "resourceType" : "Patient",
+  "identifier" : [
+    {% loop id in focus.field[3].element %}
+     {
+       "type" : { 
+         "coding" : {
+           "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+           "code" : "{{ id.component[5].text }}" 
+         }
+       },
+       "value" : "{{ id.component[1].text }}" 
+     }   
+    {% endloop %}
+  ], 
+  "active" : true,
+  "name" : [{ 
+    "family" : "{{ focus.field[5].element[1].component[1].text}}",
+    "given" : ["{{ focus.field[5].element[1].component[2].text}}"]
+   }],
+  "gender" : "{{ focus.field[8].text }}",
+  "birthDate" : "{{ engine.convertDate(focus.field[7].text, "v2", "fhir") }}"
+}
