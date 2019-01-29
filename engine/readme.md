@@ -48,6 +48,37 @@ to FHIR resources can be done in several different ways:
 
 The javascript code uses the services defined on the engine object to launch the non javascript kind of conversions.
 
+## Example
+
+Here's a simple javascript that illustrates how this might all come together:
+
+    // for use with ADT_A01 message
+	function convert(engine, object, api) {
+    
+	  // first step: process the patient
+	  var pid = msg.segment[2];
+	  var patid = pid.field[3].element[1].text;
+	  // or it could be:  patid = pid.q('field[3].element.where(component[5] = "MR").text');
+    
+	  var pat = api.read('Patient', pid); // assuming that we store patients with MYN as master
+	  if (pat == null)
+		pat = makePatient(engine, pid, api);
+	  else
+		updatePatient(pat, pid, api);
+    
+	  // now: process the encounter
+	}
+    
+	function makePatient(engine, pid, api) {
+	  var pat = engine.liquid("pid.liquid", pid, "Patient", "json");
+	  return api.create(pat);
+	}
+
+	function updatePatient(pat, pid, api) {
+	  // todo....
+	}
+
+
 ## Engine
 
 This object exposes a number of useful services to help with the conversion process.
