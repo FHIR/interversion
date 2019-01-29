@@ -215,9 +215,18 @@ Performs a [create interaction](http://hl7.org/fhir/http.html#create). Parameter
 
 Gets the version of FHIR that the API is using. 
 
-* _returns_: one of ```1.0```, ```3.0```, ``4.0``` 
+* _returns_: one of ```1.0```, ```3.0```, ```4.0``` 
 
 ## FHIR UML View
+
+Access to the FHIR objects is based on the UML view of FHIR in
+the specification. Each type is a class, that expresses a set of 
+properties with the following rules:
+
+* a named property for each attribute or association 
+* the name is the same, *except for polymorphic properties* which have [x] removed
+* attributes or associations that have cardinality ..* (e.g repeating elements) property type is an array
+* the primitive FHIR types are also clases, with id, extension and value properties. The value property is a Javascript primitive (using the same mapping as the JSON format)
 
 In addition to the features defined in the UML view, all the 
 FHIR objects have this base API:
@@ -226,7 +235,7 @@ FHIR objects have this base API:
 
 Gets the version of FHIR that the object conforms to. 
 
-* _returns_: one of ```1.0```, ```3.0```, ``4.0``` 
+* _returns_: one of ```1.0```, ```3.0```, ```4.0``` 
 
     function typeName()
 
