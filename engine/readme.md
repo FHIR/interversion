@@ -306,7 +306,7 @@ The liquid template can produce json, xml, or xhtml. Format Notes:
   (see [here](https://www.tbray.org/ongoing/When/201x/2016/08/20/Fixing-JSON)
    and [here](https://www.tbray.org/ongoing/When/201x/2016/08/22/Fixing-JSON-Redux)
 * xml: Must be a valid FHIR resource (or data type).
-* xhtml: The root node must be <div>. The namespace does not matter (it will be corrected to the xhtml namespace)
+* xhtml: The root node must be \<div\>. The namespace does not matter (it will be corrected to the xhtml namespace)
 
 # Markdown Engine Documentation
 
