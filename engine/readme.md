@@ -58,7 +58,7 @@ Here's a simple javascript that illustrates how this might all come together:
 	  // first step: process the patient
 	  var pid = msg.segment[2];
 	  var patid = pid.field[3].element[1].text;
-	  // or it could be:  patid = pid.q('field[3].element.where(component[5] = "MR").text');
+	  // or it could be:  patid = pid.q('field[3].element.where(component[5] = "MR")').text;
     
 	  var pat = api.read('Patient', patid, patid); // assuming that we store patients with MYN as master
 	  if (pat == null)
@@ -70,6 +70,7 @@ Here's a simple javascript that illustrates how this might all come together:
 	}
     
 	function makePatient(engine, pid, api, patid) {
+      // use a liquid script to make the patient resource
 	  var pat = engine.liquid("pid.liquid", pid, "Patient", "json");
       pat.id = patid;
 	  return api.update(pat);
@@ -264,17 +265,29 @@ properties with the following rules:
 In addition to the features defined in the UML view, all the 
 FHIR objects have this base API:
 
+### version()
+
     function version()
 
 Gets the version of FHIR that the object conforms to. 
 
 * _returns_: one of ```1.0```, ```3.0```, ```4.0``` 
 
+### typeName()
+
     function typeName()
 
-Returns the FHIR type of the object. Note that this might not be the same as the javascript class name of the object
+Returns the CDA type of the object. Note that this might not be the same as the javascript class name of the object
 
-* _returns_: The type name (see factory above)
+* _returns_: The class name as specified in the CDA RMIM, or the Data types definition (actually, as published in [the CDA logical Model](https://build.fhir.org/ig/HL7/fhir-cda/) 
+
+### q()
+
+    function q(expression)
+
+Runs a FHIRPath expression on the object
+
+* _returns_: The set of objects returned by the FHIRPath expression (JSON primitives for FHIRPath System types) 
 
 
 ## Source Object 
@@ -305,11 +318,21 @@ the [V2 model in the FHIRPath spec](http://hl7.org/fhirpath/2018Sep/index.html#h
 
 In addition, all v2 objects have these routines:
 
+### typeName()
+
     function typeName()
 
-Returns the v2 type of the object. Note that this might not be the same as the javascript class name of the object
+Returns the CDA type of the object. Note that this might not be the same as the javascript class name of the object
 
-* _returns_: The type name - one of Message, Segment, Field, Cell, Group
+* _returns_: The class name as specified in the CDA RMIM, or the Data types definition (actually, as published in [the CDA logical Model](https://build.fhir.org/ig/HL7/fhir-cda/) 
+
+### q()
+
+    function q(expression)
+
+Runs a FHIRPath expression on the object
+
+* _returns_: The set of objects returned by the FHIRPath expression (JSON primitives for FHIRPath System types) 
 
 
 ## CDA Document
@@ -319,11 +342,21 @@ This is an object that has properties and functions as defined in
 
 In addition, all CDA objects have these routines:
 
+### typeName()
+
     function typeName()
 
 Returns the CDA type of the object. Note that this might not be the same as the javascript class name of the object
 
 * _returns_: The class name as specified in the CDA RMIM, or the Data types definition (actually, as published in [the CDA logical Model](https://build.fhir.org/ig/HL7/fhir-cda/) 
+
+### q()
+
+    function q(expression)
+
+Runs a FHIRPath expression on the object
+
+* _returns_: The set of objects returned by the FHIRPath expression (JSON primitives for FHIRPath System types) 
 
 
 # StructureMap Engine Documentation
