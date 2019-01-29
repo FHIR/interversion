@@ -1,7 +1,7 @@
 function convert(engine, object, api) {
 
   // first step: process the patient
-  var pid = msg.segment[2];
+  var pid = object.segment[2];
   var patid = pid.field[3].element[1].text;
   // patid = pid.q('field[3].element.where(component[5] = "MR").text');
   var pat = api.read('Patient', patid);

@@ -14,6 +14,8 @@ The conversion engine offers the following services to support conversion of con
 * Terminology and other conversion services 
 * Other? MDMI? 
 
+Testing.
+
 # Javascript Engine Documentation
 
 ## Conversion process
@@ -56,7 +58,7 @@ Here's a simple javascript that illustrates how this might all come together:
 	function convert(engine, object, api) {
     
 	  // first step: process the patient
-	  var pid = msg.segment[2];
+	  var pid = object.segment[2];
 	  var patid = pid.field[3].element[1].text;
 	  // or it could be:  patid = pid.q('field[3].element.where(component[5] = "MR")').text;
     
@@ -249,7 +251,7 @@ Performs a [create interaction](http://hl7.org/fhir/http.html#create). Parameter
 
 Gets the version of FHIR that the API is using. 
 
-* _returns_: one of ```1.0```, ```3.0```, ```4.0``` 
+* _returns_: one of ```1.0```, ```3.0```, ```4.0```
 
 ## FHIR UML View
 
@@ -257,19 +259,19 @@ Access to the FHIR objects is based on the UML view of FHIR in
 the specification. Each type is a class, that expresses a set of 
 properties with the following rules:
 
-* a named property for each attribute or association 
+* a named property for each attribute or association  
 * the name is the same, *except for polymorphic properties* which have [x] removed
 * attributes or associations that have cardinality ..* (e.g repeating elements) property type is an array
 * the primitive FHIR types are also clases, with id, extension and value properties. The value property is a Javascript primitive (using the same mapping as the JSON format)
 
 In addition to the features defined in the UML view, all the 
-FHIR objects have this base API:
+FHIR objects have this base API: 
 
 ### version()
 
     function version()
 
-Gets the version of FHIR that the object conforms to. 
+Gets the version of FHIR that the object conforms to.
 
 * _returns_: one of ```1.0```, ```3.0```, ```4.0``` 
 
