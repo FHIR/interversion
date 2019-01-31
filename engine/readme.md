@@ -12,7 +12,7 @@ The conversion engine offers the following services to support conversion of con
 * FHIR Mapping Language Engine
 * Liquid Template Engine (processes JSON, XML, HTML or Markdown) 
 * Terminology and other conversion services 
-* Other? MDMI? 
+* Other? MDMI?  
 
 Testing.
 
@@ -24,12 +24,12 @@ When the host application or context initiates a conversion, the
 engine calls (via configuration) a javascript routine with this
 signature:
 
-    function convert(engine, object, api) {
+    function convert(services, object, api) {
     }
 
 Parameters:
 
-* _engine_: an object that makes conversion/transformation services available to the script - see below for documentation
+* _services_: an object that makes conversion/transformation services available to the script - see below for documentation
 * _object_: the source object being converted - see below for documentation and specifications
 * _api_: provides direct access to the FHIR database, authorised as appropriate. See below for documentation
 * _return_: there is no return fucnction
@@ -39,23 +39,23 @@ it to existing resources, and either merging updated information into the existi
 resources. Alternatively, the routine may create any number of resources (often Bundles), and provide them to
 the host application for further handling.
 
-This javascript code has to coordinate the overall conversion process, and handles the 
+This javascript code has to orchestrate the overall conversion process, and handles the 
 matching and committing against the FHIR repository. Actual mapping from the source content
 to FHIR resources can be done in several different ways:
 
-* Just writing the code in javscript - this is the least efficient way to express the conversion, but it is the most robust
+* Just writing conversion code in javscript - this is the least efficient way to express the conversion, but it is the most robust
 * Using the FHIR Mapping language - this is an efficient way to perform complex conversions, but not very good at managing merging the update with an existing resource
 * Using a liquid template (or a set of them) - this is the easiest way to perform simple conversions, but is not useable for managing merging
 * Others to be defined...
 
-The javascript code uses the services defined on the engine object to launch the non javascript kind of conversions.
+The javascript code uses the routines defined on the services object to launch the non javascript kind of conversions.
 
 ## Example
 
 Here's a simple javascript that illustrates how this might all come together:
 
     // for use with ADT_A01 message
-	function convert(engine, object, api) {
+	function convert(services, object, api) {
     
 	  // first step: process the patient
 	  var pid = object.segment[2];
@@ -64,17 +64,21 @@ Here's a simple javascript that illustrates how this might all come together:
     
 	  var pat = api.read('Patient', patid, patid); // assuming that we store patients with MYN as master
 	  if (pat == null)
-		pat = makePatient(engine, pid, api);
+		pat = makePatient(services, pid, api);
 	  else
 		updatePatient(pat, pid, api);
     
 	  // now: process the encounter
 	}
     
-	function makePatient(engine, pid, api, patid) {
+	function makePatient(services, pid, api, patid) {
       // use a liquid script to make the patient resource
-	  var pat = engine.liquid("pid.liquid", pid, "Patient", "json");
-      pat.id = patid;
+	  var pat = services.liquid("pid.liquid", pid, "Patient", "json");
+      
+      // doing this in the code here rather than the liquid script is a design choice; 
+      // the id might not always be the same, or setting it in the liquid template might 
+      //make the liquid template less reusable
+      pat.id = patid; 
 	  return api.update(pat);
 	} 
     
@@ -84,9 +88,37 @@ Here's a simple javascript that illustrates how this might all come together:
 
 For a fully worked example, see <https://github.com/FHIR/interversion/tree/master/engine/v2-scripts>
 
-## Engine
+## Services
 
-This object exposes a number of useful services to help with the conversion process.
+This object exposes a number of useful routines to help with the conversion process. It builds on the 
+[Conversion API defined in the FHIR specification](http://hl7.org/fhir/mapping-language.html#execution)
+
+From the Terminology API
+
+    function expand(valueSet, params) : ValueSet;
+    function lookup(coded, params) : Parameters;
+    function validateVS(valueSet, coded, params) : Parameters;
+    function validateCS(codeSystem, coded, params) : Parameters;
+    function subsumes(system, coded1, coded2, params) : code;
+    function translate(conceptMap, code, params) : Parameters;
+
+From the Mapping API:
+
+    function validate(code, system, version, value set) : boolean; 
+    function translateCode(code, srcSystem, dstSystem) : String;
+
+Additional Conversion support:
+
+    function factory(typeName) : Object;
+    function runJS(scriptName, routineName, params....) : Object | void;
+    function runMap(url, source[, target], callBacks...) 
+    function runLiquid(fileName, source, type[, format]) : Object;
+    function runMarkdown(fileName, source) : Object;
+    function translateUri((value, type)) : String;
+    function translateDate(date, srcFmt, dstFmt) : String;
+    
+Todo: do we need SQL access?
+
 
 ### factory
 
@@ -199,6 +231,23 @@ Parameters:
 
 This is a call to the [$translate operation](http://hl7.org/fhir/conceptmap-operation-translate.html).
 
+### convertDate
+
+    function convertDateTime(value, srcFmt, dstFmt); 
+
+Parameters:
+* _value_: The stated date(/time + timezone)
+* _srcFmt_: The stated format of the date
+* _tgtSystem_:  The desired format of the date
+* _returns_: The date/time in the desired format, if possible, or an exception
+
+Format is a format string like YYYY-MM-DDThh:mm:ss.zzzZ (see link), or one of the known special values:
+
+* _```c```_ : current specified date format on system for presentation to a human (e.g. building narrative)
+* _```h```_ : HL7 format YYYYMMDDhhnnss.zzzZ (as used in v2 and CDA)
+* _```x```_ : XML format YYYY-MM-DDThh:nn:ss.zzzZ (uas used in FHIR XMl, JSON and Turtle formats)
+
+Precison will automatically be preserved.
 
 ## FHIR API Object
 
