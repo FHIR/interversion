@@ -1,4 +1,4 @@
-# FHIR Transformer Specification
+# FHIR Conversion Engine Specification
 
 ## Introduction
 
@@ -14,7 +14,9 @@ The conversion engine offers the following services to support conversion of con
 * Terminology and other conversion services 
 * Other? MDMI?  
 
-Testing.
+The basic idea is that a javascript routine orchestrates the process - resolving IDs, matching existing resources,
+while DSL mapping languages of various kinds are used for the actual data conversion processes, since these
+are more efficient ways to express the relatiohships between the data.
 
 # Javascript Engine Documentation
 
@@ -32,7 +34,7 @@ Parameters:
 * _services_: an object that makes conversion/transformation services available to the script - see below for documentation
 * _object_: the source object being converted - see below for documentation and specifications
 * _api_: provides direct access to the FHIR database, authorised as appropriate. See below for documentation
-* _return_: there is no return fucnction
+* _return_: there is no return value
 
 The convert function is responsible for the logic of breaking up the content of the incoming object, matching 
 it to existing resources, and either merging updated information into the existing resources, or creating new 
@@ -55,36 +57,36 @@ The javascript code uses the routines defined on the services object to launch t
 Here's a simple javascript that illustrates how this might all come together:
 
     // for use with ADT_A01 message
-	function convert(services, object, api) {
-    
-	  // first step: process the patient
-	  var pid = object.segment[2];
-	  var patid = pid.field[3].element[1].text;
-	  // or it could be:  patid = pid.q('field[3].element.where(component[5] = "MR")').text;
-    
-	  var pat = api.read('Patient', patid, patid); // assuming that we store patients with MYN as master
-	  if (pat == null)
-		pat = makePatient(services, pid, api);
-	  else
-		updatePatient(pat, pid, api);
-    
-	  // now: process the encounter
-	}
-    
-	function makePatient(services, pid, api, patid) {
-      // use a liquid script to make the patient resource
-	  var pat = services.liquid("pid.liquid", pid, "Patient", "json");
+  	function convert(services, object, api) {
       
-      // doing this in the code here rather than the liquid script is a design choice; 
-      // the id might not always be the same, or setting it in the liquid template might 
-      //make the liquid template less reusable
-      pat.id = patid; 
-	  return api.update(pat);
-	} 
-    
-	function updatePatient(pat, pid, api) {
-	  // todo....
-	}
+  	  // first step: process the patient
+  	  var pid = object.segment[2];
+  	  var patid = pid.field[3].element[1].text;
+  	  // or it could be:  patid = pid.q('field[3].element.where(component[5] = "MR")').text;
+      
+  	  var pat = api.read('Patient', patid, patid); // assuming that we store patients with MYN as master
+  	  if (pat == null)
+  		pat = makePatient(services, pid, api);
+  	  else
+  		updatePatient(pat, pid, api);
+      
+  	  // now: process the encounter
+  	}
+      
+  	function makePatient(services, pid, api, patid) {
+        // use a liquid script to make the patient resource
+  	  var pat = services.liquid("pid.liquid", pid, "Patient", "json");
+        
+        // doing this in the code here rather than the liquid script is a design choice; 
+        // the id might not always be the same, or setting it in the liquid template might 
+        //make the liquid template less reusable
+        pat.id = patid; 
+  	  return api.update(pat);
+  	} 
+      
+  	function updatePatient(pat, pid, api) {
+  	  // todo....
+  	}
 
 For a fully worked example, see <https://github.com/FHIR/interversion/tree/master/engine/v2-scripts>
 
@@ -95,16 +97,15 @@ This object exposes a number of useful routines to help with the conversion proc
 
 From the Terminology API
 
-    function expand(valueSet, params) : ValueSet;
     function lookup(coded, params) : Parameters;
+    function translate(conceptMap, code, params) : Parameters;
+    function expand(valueSet, params) : ValueSet;
     function validateVS(valueSet, coded, params) : Parameters;
     function validateCS(codeSystem, coded, params) : Parameters;
-    function subsumes(system, coded1, coded2, params) : code;
-    function translate(conceptMap, code, params) : Parameters;
+    function subsumes(system, coded1, coded2) : code;
 
 From the Mapping API:
 
-    function validate(code, system, version, value set) : boolean; 
     function translateCode(code, srcSystem, dstSystem) : String;
 
 Additional Conversion support:
@@ -119,10 +120,111 @@ Additional Conversion support:
     
 Todo: do we need SQL access?
 
+### lookup
 
+    function lookup(coding, params) : Parameters;
+    function lookup(system, code, params) : Parameters;
+    function lookup(system, version, code, params) : Parameters;
+    
+[Lookup a code](http://hl7.org/fhir/terminology-service.html#lookup) (specified as a [Coding](http://hl7.org/fhir/datatypes.html#Coding), or a system+code pair, or a system+version+code triple.
+
+Parameters:
+* _coding_ : A Coding type that has both system and code (and optionally version) which specifies the code to lookup
+* _params_ : a parameters string (HTTP format) which lists the kind of parameters to return
+* _returns_ : A Parameters resource containing the set of information returned by the terminology server. 
+
+Mostly this is used to look up display names for codes when translating.
+    
+### translate
+
+    function translate(conceptMap, coding, params) : Parameters;
+    function translate(conceptMap, system, code, params) : Parameters;
+    function translate(conceptMap, system, version, code, params) : Parameters;
+    function translate(conceptMap, coding, params) : Parameters;
+
+[Translate a concept](http://hl7.org/fhir/terminology-service.html#translate) (specified as a [Coding](http://hl7.org/fhir/datatypes.html#Coding), or a system+code pair, or a system+version+code triple.
+
+Parameters:
+* _conceptMap_ : A concept map (whole resource, or just a canonical URL) to use for the translation. If this is null, the terminology server will choose the most appopriate map based on the target system specifed in the params
+* _coding_ : A Coding type that has both system and code (and optionally version) which specifies the code to translate
+* _params_ : a parameters string (HTTP format) which lists the kind of parameters to return
+* _returns_ : A Parameters resource containing the set of information returned by the terminology server. 
+
+### translateCode
+
+    function translateCode(code, srcSystem, dstSystem) : String;
+
+[Translate a concept](http://hl7.org/fhir/terminology-service.html#translate) (specified as a [Coding](http://hl7.org/fhir/datatypes.html#Coding) - simplified API.
+
+Parameters:
+* _srcCode_: The code to translate from
+* _srcSystem_: The URI of the system to translate from
+* _tgtSystem_:  The URI of the system to translate to
+* _returns_: The code in the target system, or null if there is none
+
+This is simple API wrapper for the full [$translate operation](http://hl7.org/fhir/conceptmap-operation-translate.html) - see above.
+    
+
+### expand
+
+    function expand(valueSet, params) : ValueSet;
+
+Expand a valueset. For further detail, see [The $expand Operation](http://hl7.org/fhir/terminology-service.html#expand) 
+
+Parameters:
+* _valueSet_ : A value set (whole resource, or just a canonical URL) to expand
+* _params_ : a parameters string (HTTP format) with expansion parameters
+* _returns_ : a value set containing the expansion, from the designated terminology server
+
+This is part of the terminology service, but not expected to be important for transforming between content.
+    
+### validateVS
+
+    function validateVS(valueSet, coding, params) : Parameters;
+    function validateVS(valueSet, system, code, params) : Parameters;
+    function validateVS(valueSet, system, version, code, params) : Parameters;
+
+Check that a code is in a valueset. For further detail, see [The $validate-code Operation](http://hl7.org/fhir/terminology-service.html#validate-code) 
+
+Parameters:
+* _valueSet_ : A value set (whole resource, or just a canonical URL) to check
+* _coding_ : A Coding type that has both system and code (and optionally version) which specifies the code to check
+* _params_ : a parameters string (HTTP format) with expansion/validation parameters
+* _returns_ : a Parameters resource containing the server response
+
+This is part of the terminology service, but not expected to be very important for transforming between content (though it does get used for deciding what conversion to perform)
+    
+### validateCS
+
+    function validateCS(codeSystem, coded) : Parameters;
+    function validateVS(valueSet, system, code) : Parameters;
+    function validateVS(valueSet, system, version, code) : Parameters;
+
+Check that a code is in a codeSystem. For further detail, see [The $validate-code Operation](http://hl7.org/fhir/terminology-service.html#validate-code) 
+
+Parameters:
+* _codeSystem_ : A code system (whole resource, or just a canonical URL) to expand
+* _coding_ : A Coding type that has both system and code (and optionally version) which specifies the code to lookup
+* _returns_ : a Parameters resource containing the server response
+
+This is part of the terminology service, but not expected to be very important for transforming between content (though it does get used for deciding what conversion to perform)
+    
+### subsumes
+    function subsumes(system, coding1, coding2) : code;
+
+Test to see whether a code is subsumed by another code (or vice versa). For further detail, see [The $subsumes Operation](http://hl7.org/fhir/terminology-service.html#subsumes) 
+
+Parameters:
+* system : The code system (whole resource, or just a canonical URL) the defines the subsumption testing
+* _coding1_ : A Coding the is the first code to test
+* _coding2_ : A Coding the is the second code to test
+* _code_ : one of 'equivalent', 'subsumes', 'subsumed-by', 'not-subsumed'
+
+This is part of the terminology service, but not expected to be very important for transforming between content (though it does get used for deciding what conversion to perform)
+    
 ### factory
 
-    factory(typeName)
+    function factory(typeName) : Object;
 
 Creates an object of the type named.  
 
@@ -135,11 +237,10 @@ The type name can be one of:
 * a data type name (e.g. "Identifier")
 * a path in a type or resource (e.g. "Patient.contact", "Timing.repeat")
 
-The returned object conforms to the UML view of the type in the FHIR specification.
+The returned object conforms to the UML view of the type in the FHIR specification with provisos as noted below.
 
-### js
-
-    ja(scriptName, routineName, params...)
+### runJS
+    function runJS(scriptName, routineName, params....) : Object | void;
 
 Calls the named Javascript method with the params provided, and 
 returns the specified result. 
@@ -151,24 +252,24 @@ Parameters:
 * _returns_: whatever is returned from the invoked routine (or an exception)
 
 > Todo: how script name is resolved to source content.
-
-### map
-
-    map(url, source[, target])
+    
+### runMap
+    function runMap(url, source, callBacks...[, target]) 
 
 Run the nominated StructureMap (by URL) to convert content. 
 
 Parameters:
 * _url_: The canonical URL of the StructureMap to use for the conversion
 * _source_: The object to pass to the conversion routine
+* _callBacks_: To be clarified
 * _target_: [optional] An existing target object to pass to the routine
 * _returns_: the created object, if not target is provided, else null (or an exception)
 
 > Todo: how does the provision of structure maps to the application work? 
 
-### liquid
+### runLiquid
 
-    liquid(fileName, source, type[, format])
+    function runLiquid(fileName, source, type[, format]) : Object;
 
 Use a liquid template to create a datatype or resource
 
@@ -181,9 +282,9 @@ Parameters:
 
 See below for liquid engine documentation
 
-### markdown
+### runMarkdown
 
-    markdown(fileName, source)
+    function runMarkdown(fileName, source) : Object;
 
 Use a liquid template that contains markdown to create a Narrative data type 
 
@@ -193,9 +294,9 @@ Parameters:
 * _returns_: the created div ready to use in an resource narrative (or an exception)
 
 
-### convertUri
+### translateUri
 
-    function convertUri(value, type)
+    function translateUri((value, type)) : String;
 
 Converts between FHIR URIs and v3 OIDs or V2 table 0396 code
 
@@ -206,34 +307,9 @@ Parameters:
 
 This look up is based on naming systems and/or magically known comparisons
 
-### convertQty
+### translateDate
 
-    function convertQty(value, srcUnit, tgtUnit);
-
-Converts a quantity from one unit to another (using UCUM)
-
-* _srcCode_: The value to translate from (a decimal; can be a string if the string implicity converts to a number)
-* _srcUnit_: The UCUM unit for the value
-* _tgtUnit_:  The UCUM unit to return the value in
-* _returns_: The converted value as a decimal, or null if there is none
-
-Conversion is done consistently with the definitions in UCUM
-
-### convertCode
-
-    function convertCode(srcCode, srcSystem, tgtSystem); 
-
-Parameters:
-* _srcCode_: The code to translate from
-* _srcSystem_: The URI of the system to translate from
-* _tgtSystem_:  The URI of the system to translate to
-* _returns_: The code in the target system, or null if there is none
-
-This is a call to the [$translate operation](http://hl7.org/fhir/conceptmap-operation-translate.html).
-
-### convertDate
-
-    function convertDateTime(value, srcFmt, dstFmt); 
+    function translateDate(date, srcFmt, dstFmt) : String;
 
 Parameters:
 * _value_: The stated date(/time + timezone)
@@ -248,6 +324,20 @@ Format is a format string like YYYY-MM-DDThh:mm:ss.zzzZ (see link), or one of th
 * _```x```_ : XML format YYYY-MM-DDThh:nn:ss.zzzZ (uas used in FHIR XMl, JSON and Turtle formats)
 
 Precison will automatically be preserved.
+    
+### translateQty
+
+function translateQty(value, srcUnit, tgtUnit);
+
+Converts a quantity from one unit to another (using UCUM)
+
+* _srcCode_: The value to translate from (a decimal; can be a string if the string implicity converts to a number)
+* _srcUnit_: The UCUM unit for the value
+* _tgtUnit_:  The UCUM unit to return the value in
+* _returns_: The converted value as a decimal, or null if there is none
+
+Conversion is done consistently with the definitions in UCUM
+
 
 ## FHIR API Object
 
