@@ -121,19 +121,19 @@ group code2id(source src : code, target tgt : idR3) extends Element <<types>> {
   src.value as v -> tgt.value = v "code2id-value";
 }
 
-group uri2code(source src : uriR3, target tgt : code) extends Element <<types>> {
+group uri2code(source src : uri, target tgt : codeR3) extends Element <<types>> {
   src.value as v -> tgt.value = v "uri2code-value";
 }
 
-group string2code(source src : stringR3, target tgt : code) extends Element <<types>> {
+group string2code(source src : string, target tgt : codeR3) extends Element <<types>> {
   src.value as v -> tgt.value = v "uri2code-value";
 }
 
-group code2string(source src : codeR3, target tgt : string) extends Element <<types>> {
+group code2string(source src : code, target tgt : stringR3) extends Element <<types>> {
   src.value as v -> tgt.value = v "uri2code-value";
 }
 
-group canonical2Uri(source src : canonicalR3, target tgt : uri) extends Element <<types>> {
+group canonical2Uri(source src : canonical, target tgt : uriR3) extends Element <<types>> {
   src.value as v -> tgt.value = v "canonical2uri-value";
 }
 
