@@ -5,7 +5,6 @@ uses "http://hl7.org/fhir/3.0/StructureDefinition/base64Binary" alias base64Bina
 uses "http://hl7.org/fhir/StructureDefinition/boolean" as source
 uses "http://hl7.org/fhir/3.0/StructureDefinition/boolean" alias booleanR3 as target
 uses "http://hl7.org/fhir/StructureDefinition/canonical" as source
-uses "http://hl7.org/fhir/3.0/StructureDefinition/canonical" alias canonicalR3 as target
 uses "http://hl7.org/fhir/StructureDefinition/code" as source
 uses "http://hl7.org/fhir/3.0/StructureDefinition/code" alias codeR3 as target
 uses "http://hl7.org/fhir/StructureDefinition/date" as source
@@ -35,7 +34,6 @@ uses "http://hl7.org/fhir/3.0/StructureDefinition/unsignedInt" alias unsignedInt
 uses "http://hl7.org/fhir/StructureDefinition/uri" as source
 uses "http://hl7.org/fhir/3.0/StructureDefinition/uri" alias uriR3 as target
 uses "http://hl7.org/fhir/StructureDefinition/url" as source
-uses "http://hl7.org/fhir/3.0/StructureDefinition/url" alias urlR3 as target
 uses "http://hl7.org/fhir/StructureDefinition/uuid" as source
 uses "http://hl7.org/fhir/3.0/StructureDefinition/uuid" alias uuidR3 as target
 uses "http://hl7.org/fhir/StructureDefinition/xhtml" as source
@@ -49,10 +47,6 @@ group base64Binary(source src : base64Binary, target tgt : base64BinaryR3) exten
 
 group boolean(source src : boolean, target tgt : booleanR3) extends Element <<type+>> {
   src.value as v -> tgt.value = v "boolean-value";
-}
-
-group canonical(source src : canonical, target tgt : canonicalR3) extends Element <<type+>> {
-  src.value as v -> tgt.value = v "canonical-value";
 }
 
 group code(source src : code, target tgt : codeR3) extends Element <<type+>> {
@@ -109,10 +103,6 @@ group unsignedInt(source src : unsignedInt, target tgt : unsignedIntR3) extends 
 
 group uri(source src : uri, target tgt : uriR3) extends Element <<type+>> {
   src.value as v -> tgt.value = v "uri-value";
-}
-
-group url(source src : url, target tgt : urlR3) extends Element <<type+>> {
-  src.value as v -> tgt.value = v "url-value";
 }
 
 group uuid(source src : uuid, target tgt : uuidR3) extends Element <<type+>> {
